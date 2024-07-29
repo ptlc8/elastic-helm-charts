@@ -54,7 +54,9 @@ install:
   annotations: {}
 
 delete:
-  annotations: {}
+  annotations:
+    "helm.sh/hook": pre-delete
+    "helm.sh/hook-delete-policy": hook-succeeded
 
 resources:
   requests:

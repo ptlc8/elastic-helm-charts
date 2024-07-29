@@ -4,8 +4,6 @@ metadata:
   name: pre-delete-{{ template "kibana.fullname" . }}
   labels: {{ include "kibana.labels" . | nindent 4 }}
   annotations:
-    "helm.sh/hook": pre-delete
-    "helm.sh/hook-delete-policy": hook-succeeded
     {{- if .Values.delete.annotations }}
     {{- range $key, $value := .Values.delete.annotations }}
     {{ $key }}: {{ $value | quote }}
@@ -50,11 +48,11 @@ spec:
                   name: {{ .Values.elasticsearchCredentialSecret }}
                   key: password
             - name: ELASTICSEARCH_SSL_CERTIFICATEAUTHORITIES
-              value: "{{ template "kibana.home_dir" . }}/config/certs/{{ .Values.elasticsearchCertificateAuthoritiesFile }}"
+              value: /certs/{{ .Values.elasticsearchCertificateAuthoritiesFile }}"
           volumeMounts:
             {{- if .Values.elasticsearchCertificateSecret }}
             - name: elasticsearch-certs
-              mountPath: {{ template "kibana.home_dir" . }}/config/certs
+              mountPath: /certs
               readOnly: true
             {{- end }}
       serviceAccount: pre-delete-{{ template "kibana.fullname" . }}
