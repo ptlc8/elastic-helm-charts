@@ -4,8 +4,8 @@ metadata:
   name: pre-install-{{ template "kibana.fullname" . }}
   labels: {{ include "kibana.labels" . | nindent 4 }}
   annotations:
-    {{- if .Values.setup.annotations }}
-    {{- range $key, $value := .Values.setup.annotations }}
+    {{- if .Values.install.annotations }}
+    {{- range $key, $value := .Values.install.annotations }}
     {{ $key }}: {{ $value | quote }}
     {{- end }}
     {{- end }}
