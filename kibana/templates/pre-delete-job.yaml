@@ -1,22 +1,24 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: pre-install-{{ template "kibana.fullname" . }}
+  name: pre-delete-{{ template "kibana.fullname" . }}
   labels: {{ include "kibana.labels" . | nindent 4 }}
   annotations:
-    {{- if .Values.setup.annotations }}
-    {{- range $key, $value := .Values.setup.annotations }}
+    "helm.sh/hook": pre-delete
+    "helm.sh/hook-delete-policy": hook-succeeded
+    {{- if .Values.delete.annotations }}
+    {{- range $key, $value := .Values.delete.annotations }}
     {{ $key }}: {{ $value | quote }}
     {{- end }}
     {{- end }}
 spec:
-  backoffLimit: 20
+  backoffLimit: 3
   template:
     spec:
       restartPolicy: Never
       containers:
-        - name: create-kibana-token
-          image: curlimages/curl:7.79.1
+        - name: clean-kibana-token
+          image: "{{ .Values.image }}:{{ .Values.imageTag }}"
           imagePullPolicy: "{{ .Values.imagePullPolicy }}"
           command:
             - /bin/sh
@@ -24,37 +26,18 @@ spec:
             - -c
             - |
               set -e
-              echo 'Creating a new Elasticsearch token for Kibana'
+              echo 'Cleaning the Kibana Elasticsearch token'
               ES_PATH='_security/service/elastic/kibana/credential/token/{{ template "kibana.fullname" . }}'
               ES_URL='{{ .Values.elasticsearchHosts }}/'"$ES_PATH"
               ES_AUTH="$ELASTICSEARCH_USERNAME:$ELASTICSEARCH_PASSWORD"
               ES_CA="$ELASTICSEARCH_SSL_CERTIFICATEAUTHORITIES"
-
               K8S_CA='/run/secrets/kubernetes.io/serviceaccount/ca.crt'
               K8S_URL="https://$KUBERNETES_SERVICE_HOST:$KUBERNETES_SERVICE_PORT_HTTPS"
               K8S_BEARER=$(cat /run/secrets/kubernetes.io/serviceaccount/token)
-              echo 'Cleaning previous token'
-              curl  -X DELETE -u "$ES_AUTH" --cacert "$ES_CA" "$ES_URL"
-              echo 'Creating new token'
-              RESPONSE=$(curl -X POST -u "$ES_AUTH" --cacert "$ES_CA" "$ES_URL")
-              TOKEN=$(echo $RESPONSE | sed -n 's/.*"value":"\([^"]*\)".*/\1/p')
-              BASE64_TOKEN=$(echo $TOKEN | base64 -w 0)
-              K8S_SECRET='
-              {
-                "apiVersion": "v1",
-                "kind": "Secret",
-                "metadata": {
-                  "namespace": "{{ .Release.Namespace }}",
-                  "name": "{{ template "kibana.fullname" . }}-es-token"
-                },
-                "type": "Opaque",
-                "data": {
-                  "token": "'$BASE64_TOKEN'"
-                }
-              }'
-              echo 'Creating K8S secret'
-              echo "$K8S_SECRET"
-              curl -v --fail-with-body -X POST --cacert "$K8S_CA" -H "Authorization: Bearer $K8S_BEARER" -H 'Accept: application/json' -H 'Content-Type: application/json' "$K8S_URL/api/v1/namespaces/{{ .Release.Namespace }}/secrets" -d "$K8S_SECRET"
+              echo 'Cleaning token'
+              curl -X DELETE -u "$ES_AUTH" --cacert "$ES_CA" "$ES_URL"
+              echo 'Delete K8S secret'
+              curl -X DELETE --cacert "$K8S_CA" -H "Authorization: Bearer $K8S_BEARER" -H 'Accept: application/json' -H 'Content-Type: application/json' "$K8S_URL/api/v1/namespaces/{{ .Release.Namespace }}/secrets/{{ template "kibana.fullname" . }}-es-token"
           env:
             - name: "ELASTICSEARCH_USERNAME"
               valueFrom:
@@ -72,7 +55,7 @@ spec:
             - name: elasticsearch-certs
               mountPath: {{ template "kibana.home_dir" . }}/config/certs
               readOnly: true
-      serviceAccount: pre-install-{{ template "kibana.fullname" . }}
+      serviceAccount: pre-delete-{{ template "kibana.fullname" . }}
       volumes:
         - name: elasticsearch-certs
           secret:

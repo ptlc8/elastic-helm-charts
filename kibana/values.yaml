@@ -52,6 +52,9 @@ podAnnotations: {}
 setup:
   annotations: {}
 
+delete:
+  annotations: {}
+
 resources:
   requests:
     cpu: "1000m"
