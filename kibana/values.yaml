@@ -1,4 +1,3 @@
----
 elasticsearchHosts: "https://elasticsearch-master:9200"
 elasticsearchCertificateSecret: elasticsearch-master-certs
 elasticsearchCertificateAuthoritiesFile: ca.crt
@@ -13,30 +12,30 @@ replicas: 1
 extraEnvs:
   - name: "NODE_OPTIONS"
     value: "--max-old-space-size=1800"
-#  - name: MY_ENVIRONMENT_VAR
-#    value: the_value_goes_here
+# - name: MY_ENVIRONMENT_VAR
+#   value: the_value_goes_here
 
 # Allows you to load environment variables from kubernetes secret or config map
 envFrom: []
 # - secretRef:
-#     name: env-secret
+#   name: env-secret
 # - configMapRef:
-#     name: config-map
+#   name: config-map
 
 # A list of secrets and their paths to mount inside the pod
 # This is useful for mounting certificates for security and for mounting
 # the X-Pack license
 secretMounts: []
-#  - name: kibana-keystore
-#    secretName: kibana-keystore
-#    path: /usr/share/kibana/data/kibana.keystore
-#    subPath: kibana.keystore # optional
+# - name: kibana-keystore
+#   secretName: kibana-keystore
+#   path: /usr/share/kibana/data/kibana.keystore
+#   subPath: kibana.keystore # optional
 
 hostAliases: []
-#- ip: "127.0.0.1"
-#  hostnames:
-#  - "foo.local"
-#  - "bar.local"
+# - ip: "127.0.0.1"
+#   hostnames:
+#     - "foo.local"
+#     - "bar.local"
 
 image: "docker.elastic.co/kibana/kibana"
 imageTag: "8.5.1"
@@ -51,12 +50,13 @@ podAnnotations: {}
 # iam.amazonaws.com/role: es-cluster
 
 install:
-  annotations: {}
+  annotations:
+    "helm.sh/hook-delete-policy": before-hook-creation, hook-succeeded
 
 delete:
   annotations:
     "helm.sh/hook": pre-delete
-    "helm.sh/hook-delete-policy": hook-succeeded
+    "helm.sh/hook-delete-policy": before-hook-creation, hook-succeeded
 
 resources:
   requests:
@@ -75,9 +75,9 @@ healthCheckPath: "/app/kibana"
 # Allows you to add any config files in /usr/share/kibana/config/
 # such as kibana.yml
 kibanaConfig: {}
-#   kibana.yml: |
-#     key:
-#       nestedkey: value
+# kibana.yml: |
+#   key:
+#     nestedkey: value
 
 # If Pod Security Policy in use it may be required to specify security context as well as service account
 
@@ -92,6 +92,9 @@ securityContext:
   runAsNonRoot: true
   runAsUser: 1000
 
+# If you don't want to query a token from Elasticsearch, you can set this to false
+createElasticsearchToken: true
+
 serviceAccount: ""
 
 # Whether or not to automount the service account token in the pod. Normally, Kibana does not need this
@@ -105,15 +108,14 @@ httpPort: 5601
 
 extraVolumes:
   []
-  # - name: extras
-  #   emptyDir: {}
+# - name: extras
+#   emptyDir: {}
 
 extraVolumeMounts:
   []
-  # - name: extras
-  #   mountPath: /usr/share/extras
-  #   readOnly: true
-  #
+# - name: extras
+#   mountPath: /usr/share/extras
+#   readOnly: true
 
 extraContainers: []
 # - name: dummy-init
@@ -155,10 +157,10 @@ ingress:
     - host: kibana-example.local
       paths:
         - path: /
-  #tls: []
-  #  - secretName: chart-example-tls
-  #    hosts:
-  #      - chart-example.local
+# tls: []
+#   - secretName: chart-example-tls
+#     hosts:
+#       - chart-example.local
 
 readinessProbe:
   failureThreshold: 3

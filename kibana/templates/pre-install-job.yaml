@@ -1,3 +1,4 @@
+{{- if .Values.createElasticsearchToken }}
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -80,3 +81,4 @@ spec:
           secret:
             secretName: {{ .Values.elasticsearchCertificateSecret }}
         {{- end }}
+{{- end }}

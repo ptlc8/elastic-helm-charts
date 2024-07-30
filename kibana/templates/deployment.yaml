@@ -114,12 +114,14 @@ spec:
           {{- end }}
           - name: SERVER_HOST
             value: "{{ .Values.serverHost }}"
+          {{- if .Values.createElasticsearchToken }}
           - name: ELASTICSEARCH_SERVICEACCOUNTTOKEN
             valueFrom:
               secretKeyRef:
                 name: {{ template "kibana.fullname" . }}-es-token
                 key: token
                 optional: false
+          {{- end }}
 {{- if .Values.extraEnvs }}
 {{ toYaml .Values.extraEnvs | indent 10 }}
 {{- end }}
